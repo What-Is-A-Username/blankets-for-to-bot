@@ -1,13 +1,19 @@
 # Blankets for T.O. Bot
-A Discord bot written in Python for the Blankets for T.O. Discord server.
+A Discord bot written in Python for the Blankets for T.O. Discord server. Features several commands usable by server members and automated private welcome messages.
 
 ## About 
-The bot was written with `discord.py` and it responds to text commands sent via a Discord message. A primary function of the bot is to help keep Blankets for T.O. members updated on their personal points totals under the Member Rewards system. The bot accesses this data by sending requests to Google Sheets API v4, since all Member Rewards points are stored on a public view-only spreadsheet.
+The bot was written with `discord.py` and it responds to text commands sent via a Discord message. A primary function of the bot is to help keep Blankets for T.O. members updated on their personal points totals under the Member Rewards system. The bot accesses this data by sending requests to Google Sheets API v4, since all Member Rewards points are stored on a public view-only spreadsheet. Additionally, 
 
-Made with Python, Flask, [Discord.py](https://discordpy.readthedocs.io/en/stable/#) and [Google Sheets API](https://developers.google.com/sheets/api/)
+Made with Python, Flask, [Discord.py](https://discordpy.readthedocs.io/en/stable/#), [Google Sheets API](https://developers.google.com/sheets/api/), and [Contentful](https://www.contentful.com/)
 
-## Implemented Commands
+## Bot Commands Implemented
 All commands begin with `!`, but can differ in their availability for call in private messages and in servers.
+
+### View recent and upcoming events
+
+The `!events` command shows recent and upcoming events organized by Blankets for T.O., making it convenient for our member community to get updated and involved with our organization.
+
+![Example of calling events command](/screenshots/events.png)
 
 ### Check total rewards points
 
@@ -47,7 +53,7 @@ The `!get-guilds` command is a bot-owner only command that allows the owner to c
 
 The `!get-id` command is a quick command which returns the user their unique Discord ID which is used for @ mentions in bot messages.
 
-## Functionalities 
+## Other Functionalities 
 
 ### Automated private welcome message
 Upon joining the Blankets for T.O. server, the member receives a friendly welcome message encouraging them to introduce themselves. It also suggests where they would find help for how to use Discord and how to navigate the server.

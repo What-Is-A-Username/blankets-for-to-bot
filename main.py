@@ -1,9 +1,11 @@
-import keep_alive
+import hosting
 import os
 from discord.ext.commands.context import Context
 from discord import message
 import requests
 from typing import List
+from datetime import datetime, timezone
+import contentful
 
 from dotenv import load_dotenv
 import discord
@@ -13,6 +15,11 @@ load_dotenv()
 TOKEN = os.environ['DISCORD_TOKEN']
 GUILD = os.environ['DISCORD_GUILD']
 TESTING_GUILD = os.environ['TESTING_GUILD']
+
+# Contentful Delivery API
+contentful_space_id = os.environ['CONTENTFUL_SPACE_ID']
+contentful_access_token = os.environ['CONTENTFUL_ACCESS_TOKEN'] 
+client = contentful.Client(contentful_space_id, contentful_access_token)
 
 # Embed Message Design
 EMBED_COLOUR = 0xfc5c5c
@@ -152,8 +159,11 @@ async def top(ctx: Context):
 	x = 10
 	points = points[:x]
 	# output the leaderboard
-	info = f'**\nTop {x} Totals of All Time:**\n' + '\n'.join([f'{person[0]} ({person[1]} points)' for person in points])
+	info = f'\n__Top {x} Point Totals__\n'
 	embed = discord.Embed(title='Member Points Leaderboard', description=info, colour=EMBED_COLOUR)
+	embed.add_field(name='#', value='\n'.join([str(x) for x in range(1, x+1)])+'\n', inline=True)
+	embed.add_field(name='Person', value='\n'.join([person[0] for person in points])+'\n', inline=True)
+	embed.add_field(name='Points', value='\n'.join([str(person[1]) for person in points])+'\n', inline=True)
 	embed.set_footer(text='Data pulled from points tracker. Access it via !points-link.')
 	await ctx.send(embed=embed)
     
@@ -193,10 +203,13 @@ async def total_points(ctx: Context, first_name: str = None):
 			for i in range(0, len(categories)): 
 				categories[i] = categories[i].replace('+', '').replace('-', '')
 				if categories[i] != '' and int(categories[i]) != 0:
-					breakdown.append(f'+{int(categories[i])}\t\t{headings[i]}')
-			info = info + '\n\n**__Points Breakdown By Month:__**\n' + ('\n'.join(breakdown))
+					breakdown.append([headings[i], categories[i]])
+			info = info + '\n\n**__Points Breakdown By Month:__**\n'
 			
 		embed = discord.Embed(title='Member Points', description=info, colour=EMBED_COLOUR)
+		if total_points > 0:
+			embed.add_field(name='Month', value='\n'.join([entry[0] for entry in breakdown]), inline=True)
+			embed.add_field(name='Points', value='\n'.join([entry[1] for entry in breakdown]), inline=True)
 		embed.set_footer(text='Data pulled from points tracker. Access it via !points-link.')
 		await ctx.send(embed=embed)
 
@@ -249,15 +262,18 @@ async def monthly_points(ctx: Context, first_name: str = None, month: str = None
 			for i in range(0, len(categories) - 1): 
 				categories[i] = categories[i].replace('+', '').replace('-', '')
 				if categories[i] != '' and int(categories[i]) != 0:
-					breakdown.append(f'+{int(categories[i])}\t\t{headings[i]}')
+					breakdown.append([f'+{int(categories[i])}', headings[i]])
 			
 			redeemed_points = categories[-1].replace('+', '').replace('-', '')
 			if redeemed_points != '' and int(redeemed_points) != 0:
-				breakdown.append(f'-{int(redeemed_points)}\t\tPoints Redeemed for Prizes')
+				breakdown.append([f'-{int(redeemed_points)}', 'Points redeemed for prizes'])
 
-			info = info + f'\n\n**__Points Breakdown for {identified_month.title()}:__**\n' + ('\n'.join(breakdown))
+			info = info + f'\n\n**__Points Breakdown for {identified_month.title()}:__**\n'
 			
 		embed = discord.Embed(title='Member Points', description=info, colour=EMBED_COLOUR)
+		if total_points > 0:
+			embed.add_field(name='Points', value='\n'.join([entry[0] for entry in breakdown]), inline=True)
+			embed.add_field(name='Task', value='\n'.join([entry[1] for entry in breakdown]), inline=True)
 		embed.set_footer(text='Data pulled from points tracker. Access it via !points-link.')
 		await ctx.send(embed=embed)
 
@@ -272,6 +288,26 @@ async def points_link(ctx: Context):
 	info = f'Hello <@{ctx.author.id}>!\n\nView the current members points tally here:\n{sheet_link}\n\nThis spreadsheet is maintained by the executive team. Message them if you have any questions!'
 	embed = discord.Embed(title='Member Points Link', description=info, colour=EMBED_COLOUR)
 	await ctx.send(embed=embed) 
+
+@bot.command(name='events', brief='Print a list of upcoming and recent events.', description='Print a list of upcoming and recent events run by Blankets for T.O.')
+@commands.cooldown(1, 10, commands.BucketType.user)
+async def events(ctx: Context):
+	event_content_type_id = os.environ['EVENT_CONTENT_TYPE_ID']
+	events_by_date = client.entries({'content_type': event_content_type_id, 'order': 'fields.startDate'})
+	past_events = [r for r in events_by_date if r.start_date > datetime.now(timezone.utc)]
+	upcoming_events = [r for r in events_by_date if r.start_date <= datetime.now(timezone.utc)]
+	embed = discord.Embed(title='Upcoming and Recent Events', description='A list of upcoming and recent events organized by Blankets for T.O.', colour=EMBED_COLOUR)
+	if len(upcoming_events) > 0:
+		embed.add_field(name='\n\u200b\n\u200b__UPCOMING EVENTS__', value='\n\u200b', inline=False)
+		for event in upcoming_events:
+			embed.add_field(name=event.event_name + ' (' + event.start_date.strftime('%b %d, %Y') + ')', value=event.description+'\n\u200b', inline=False)
+	if len(past_events) > 0:
+		embed.add_field(name='__PAST EVENTS__', value='\n\u200b', inline=False)
+		for event in past_events:
+			embed.add_field(name=event.event_name + ' (' + event.start_date.strftime('%b %d, %Y') + ')', value=event.description+'\n\u200b', inline=False)
+
+	embed.set_footer(text='Have any questions? Message our Executive Team!')
+	await ctx.send(embed=embed)
 
 # give a link to the rules section 
 @bot.command(name='rules', brief='Access Discord help tips and server rules.', description='Access Discord help tips and server rules for this server.')
@@ -322,10 +358,10 @@ async def on_member_join(member: discord.Member):
 async def on_message(message: message.Message):
 	if message.author != bot.user:
 		if isinstance(message.channel, discord.channel.DMChannel) or message.content.startswith('!') and message.channel.name == 'bot-commands':
-			if message.content.split(' ')[0] not in ['!help', '!points', '!monthly-points', '!get-guilds', '!get-id', '!rules', '!points-link', '!top']:
+			if message.content.split(' ')[0] not in ['!events', '!help', '!points', '!monthly-points', '!get-guilds', '!get-id', '!rules', '!points-link', '!top']:
 				await message.channel.send(f'Hi <@{message.author.id}>. A command could not be recognized in the last message you sent. Check for any misspelling and type "!help" for a list of supported commands.')
 	await bot.process_commands(message)
 	return
 
-keep_alive.keep_alive()
+# hosting.keep_alive()
 bot.run(TOKEN)
