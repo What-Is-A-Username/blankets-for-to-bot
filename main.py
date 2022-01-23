@@ -293,18 +293,19 @@ async def points_link(ctx: Context):
 @commands.cooldown(1, 10, commands.BucketType.user)
 async def events(ctx: Context):
 	event_content_type_id = os.environ['EVENT_CONTENT_TYPE_ID']
-	events_by_date = client.entries({'content_type': event_content_type_id, 'order': 'fields.startDate'})
-	past_events = [r for r in events_by_date if r.start_date > datetime.now(timezone.utc)]
-	upcoming_events = [r for r in events_by_date if r.start_date <= datetime.now(timezone.utc)]
-	embed = discord.Embed(title='Upcoming and Recent Events', description='A list of upcoming and recent events organized by Blankets for T.O.', colour=EMBED_COLOUR)
+	events_by_date = client.entries({'content_type': event_content_type_id, 'order': 'fields.eventDate'})
+	visible_events = [e for e in events_by_date if e.start_date <= datetime.now(timezone.utc) and e.end_date >= datetime.now(timezone.utc)]
+	past_events = [e for e in visible_events if e.event_date < datetime.now(timezone.utc)]
+	upcoming_events = [e for e in visible_events if e.event_date >= datetime.now(timezone.utc)]
+	embed = discord.Embed(title='Upcoming and Recent Events', description='Browse this list of upcoming and recent events organized by Blankets for T.O.\n\u200b', colour=EMBED_COLOUR)
 	if len(upcoming_events) > 0:
-		embed.add_field(name='\n\u200b\n\u200b__UPCOMING EVENTS__', value='\n\u200b', inline=False)
+		embed.add_field(name='__UPCOMING EVENTS__', value='\u200b', inline=False)
 		for event in upcoming_events:
-			embed.add_field(name=event.event_name + ' (' + event.start_date.strftime('%b %d, %Y') + ')', value=event.description+'\n\u200b', inline=False)
+			embed.add_field(name=event.event_name + ' (' + event.event_date.strftime('%b %d, %Y') + ')', value=event.description+'\n\u200b', inline=False)
 	if len(past_events) > 0:
-		embed.add_field(name='__PAST EVENTS__', value='\n\u200b', inline=False)
+		embed.add_field(name='__RECENT AND ONGOING EVENTS__', value='\u200b', inline=False)
 		for event in past_events:
-			embed.add_field(name=event.event_name + ' (' + event.start_date.strftime('%b %d, %Y') + ')', value=event.description+'\n\u200b', inline=False)
+			embed.add_field(name=event.event_name + ' (' + event.event_date.strftime('%b %d, %Y') + ')', value=event.description+'\n\u200b', inline=False)
 
 	embed.set_footer(text='Have any questions? Message our Executive Team!')
 	await ctx.send(embed=embed)
