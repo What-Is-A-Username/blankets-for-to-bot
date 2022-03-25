@@ -2,7 +2,7 @@
 A Discord bot written in Python for the Blankets for T.O. Discord server. Features several commands usable by server members and automated private welcome messages.
 
 ## About 
-The bot was written with `discord.py` and it responds to text commands sent via a Discord message. A primary function of the bot is to help keep Blankets for T.O. members updated on their personal points totals under the Member Rewards system. The bot accesses this data by sending requests to Google Sheets API v4, since all Member Rewards points are stored on a public view-only spreadsheet. Additionally, 
+The bot was written with `discord.py` and it responds to text commands sent via a Discord message. A primary function of the bot is to help keep Blankets for T.O. members updated on their personal points totals under the Member Rewards system. The bot accesses this data by sending requests to Google Sheets API v4, since all Member Rewards points are stored on a public view-only spreadsheet. Additionally, the bot retrieves data from a Contentful space to give information on recent and upcoming events organized by Blankets for T.O.
 
 Made with Python, Flask, [Discord.py](https://discordpy.readthedocs.io/en/stable/#), [Google Sheets API](https://developers.google.com/sheets/api/), and [Contentful](https://www.contentful.com/)
 
